@@ -9,8 +9,10 @@ const port = process.env.PORT || 3001;
 
 // Initialize Stripe with your secret key
 const stripe = Stripe('sk_test_51KpnnQSBQGiFWyMnCeRYVDK3jyw8xjYeRo7NsJiAEim3EAYHxR5MzAABHpCbYiCCYNJjrB3kkbZS520eLmBer1wS00RZfxg97A'); // Replace with your actual Stripe secret key
-// Mock data
+
+// Import mock data
 const products = require('./data/products'); // Import your products data
+const orders = require('./data/orders'); // Import your mock orders
 
 // Middleware
 app.use(cors());
@@ -31,6 +33,7 @@ app.get('/products/:id', (req, res) => {
     res.status(404).send('Product not found');
   }
 });
+
 // Endpoint to create a payment intent
 app.post('/payments/intents', async (req, res) => {
   try {
@@ -50,28 +53,34 @@ app.post('/payments/intents', async (req, res) => {
   }
 });
 
-
-
 // Endpoint to create an order
 app.post('/orders', (req, res) => {
   const newOrder = req.body;
 
-  // Add a unique ID to the order
+  // Add a unique ID and reference to the order
   newOrder.id = `order_${Date.now()}`;
+  newOrder.reference = `REF${Date.now()}`;
+
   orders.push(newOrder);
 
   res.status(201).json(newOrder);
 });
 
+// Endpoint to get all orders
+app.get('/orders', (req, res) => {
+  res.json(orders);
+});
+
 // Endpoint to get an order by reference ID
 app.get('/orders/:ref', (req, res) => {
-  const order = orders.find(o => o.id === req.params.ref);
+  const order = orders.find(o => o.reference === req.params.ref);
   if (order) {
     res.json(order);
   } else {
     res.status(404).send('Order not found');
   }
 });
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
