@@ -15,9 +15,7 @@ const products = require('./data/products'); // Import your products data
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-
 app.use(express.json());
-
 
 // Endpoint to get all products
 app.get('/products', (req, res) => {
@@ -54,6 +52,26 @@ app.post('/payments/intents', async (req, res) => {
 
 
 
+// Endpoint to create an order
+app.post('/orders', (req, res) => {
+  const newOrder = req.body;
+
+  // Add a unique ID to the order
+  newOrder.id = `order_${Date.now()}`;
+  orders.push(newOrder);
+
+  res.status(201).json(newOrder);
+});
+
+// Endpoint to get an order by reference ID
+app.get('/orders/:ref', (req, res) => {
+  const order = orders.find(o => o.id === req.params.ref);
+  if (order) {
+    res.json(order);
+  } else {
+    res.status(404).send('Order not found');
+  }
+});
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
