@@ -7,13 +7,22 @@ const axios = require("axios");
 const path = require("path");
 const admin = require("firebase-admin");
 
-// Initialize Firebase Admin SDK
+const fs = require("fs");
 const serviceAccountPath = path.join(
   __dirname,
   "first-firebase-35b9f-firebase-adminsdk-khspw-470afa8ad9.json"
 );
+
+// Check if the file exists
+if (!fs.existsSync(serviceAccountPath)) {
+  console.error(`Service account key file not found at ${serviceAccountPath}`);
+  process.exit(1);
+}
+
+const serviceAccount = require("./first-firebase-35b9f-firebase-adminsdk-khspw-470afa8ad9.json");
+
 admin.initializeApp({
-  credential: admin.credential.cert(require(serviceAccountPath)),
+  credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://first-firebase-35b9f-default-rtdb.firebaseio.com",
 });
 
@@ -99,14 +108,21 @@ app.get("/orders/:ref", (req, res) => {
 
 // Obtain an access token from Google Cloud
 async function getAccessToken() {
-  const auth = new GoogleAuth({
-    keyFile: serviceAccountPath,
-    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-  });
-  const client = await auth.getClient();
-  const tokenInfo = await client.getAccessToken();
-  return tokenInfo.token;
+  try {
+    const auth = new GoogleAuth({
+      keyFile: serviceAccountPath,
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+    const client = await auth.getClient();
+    const tokenInfo = await client.getAccessToken();
+    console.log("Access Token:", tokenInfo.token); // Log token for debugging
+    return tokenInfo.token;
+  } catch (error) {
+    console.error("Error getting access token:", error);
+    throw error;
+  }
 }
+
 
 // POST endpoint for sending notifications
 app.post("/send-notification", async (req, res) => {
@@ -146,7 +162,7 @@ app.post("/send-notification", async (req, res) => {
       "Error sending notification:",
       error.response ? error.response.data : error.message
     );
-    res.status(500).json({ error: "Failed to send notification" });
+    res.status(500).json({ error: "Failed to send notification"+error });
   }
 });
 
